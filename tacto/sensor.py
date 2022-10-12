@@ -287,7 +287,7 @@ class Sensor:
         gray = (np.clip(depth / self.zrange, 0, 1) * 255).astype(np.uint8)
         return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
-    def updateGUI(self, colors, depths):
+    def updateGUI(self, colors, depths, event=False):
         """
         Update images for visualization
         """
@@ -297,17 +297,43 @@ class Sensor:
         # concatenate colors horizontally (axis=1)
         color = np.concatenate(colors, axis=1)
 
-        if self.show_depth:
-            # concatenate depths horizontally (axis=1)
-            depth = np.concatenate(list(map(self._depth_to_color, depths)), axis=1)
+        # split image into seperate channels for analysis
+        b, g, r = cv2.split(color)
+        B = cv2.cvtColor(b, cv2.COLOR_GRAY2BGR)
+        G = cv2.cvtColor(g, cv2.COLOR_GRAY2BGR)
+        R = cv2.cvtColor(r, cv2.COLOR_GRAY2BGR)
 
-            # concatenate the resulting two images vertically (axis=0)
-            color_n_depth = np.concatenate([color, depth], axis=0)
+        if event==False:
+            if self.show_depth:
+                # concatenate depths horizontally (axis=1)
+                depth = np.concatenate(list(map(self._depth_to_color, depths)), axis=1)
 
-            cv2.imshow(
-                "color and depth", cv2.cvtColor(color_n_depth, cv2.COLOR_RGB2BGR)
-            )
-        else:
-            cv2.imshow("color", cv2.cvtColor(color, cv2.COLOR_RGB2BGR))
+                # concatenate the resulting two images vertically (axis=0)
+                color_n_depth = np.concatenate([color, depth], axis=0)
+
+                cv2.imshow(
+                    "color and depth", cv2.cvtColor(color_n_depth, cv2.COLOR_RGB2BGR)
+                )
+            else:
+                cv2.imshow("color", cv2.cvtColor(color, cv2.COLOR_RGB2BGR))
+        elif event==True:
+            if self.show_depth:
+                # concatenate depths horizontally (axis=1)
+                depth = np.concatenate(list(map(self._depth_to_color, depths)), axis=1)
+
+                # concatenate the resulting two images horizontally (axis=1)
+                R_n_G = np.concatenate([R, G], axis=1)
+
+                # concatenate the resulting two images horizontally (axis=1)
+                B_n_depth = np.concatenate([B, depth], axis=1)
+
+                # concatenate the resulting two images vertically (axis=0)
+                color_n_depth = np.concatenate([R_n_G, B_n_depth], axis=0)
+
+                cv2.imshow(
+                    "R, G, B and depth", cv2.cvtColor(color_n_depth, cv2.COLOR_RGB2BGR)
+                )
+            else:
+                cv2.imshow("R, G and B channels", cv2.cvtColor(np.concatenate([R, G, B], axis=1), cv2.COLOR_GRAY2BGR))
 
         cv2.waitKey(1)
